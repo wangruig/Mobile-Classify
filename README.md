@@ -1,86 +1,15 @@
 # Mobile-Classify
 ***
-## **创建神经网络模型**
+##数据集介绍
+数据集包含2000*21维数据，最后一维数据为目标变量价格情况，0表示低成本，1表示中成本，2表示高成本，3表示非常高成本。
+属性变量包含前20维，分别包含电池容量、是否有蓝牙、微处理器执行指令的速度、是否支持双卡、前置摄像头像素、后置摄像头像素等等属性变量。
 
-class Net(torch.nn.Module):
-
-    # input_dims = 20
-    def __init__(self):
-        super(Net,self).__init__()
-        self.net = torch.nn.Sequential(         
-            torch.nn.Linear(20,15)
-            # ,torch.nn.BatchNormld(10)
-            ,torch.nn.Sigmoid()
-            ,torch.nn.Dropout(0.6)
-            ,torch.nn.Linear(15,10)
-            # ,torch.nn.BatchNormld(10)
-            ,torch.nn.Sigmoid()
-            ,torch.nn.Dropout(0.6)
-            ,torch.nn.Linear(10,4)
-            )  
-        self.net1 = torch.nn.Softmax(2)
-    def forward(self,x):
-        out = self.net(x)
-        out = F.softmax(out, dim=1) # 计算log(softmax(x))
-        return out
-
-## **获取数据**
-def get_data(batch_size=256):
-
-    x_train,x_test,y_train,y_test = train_test_split(train_data,train_target,test_size=0.1,random_state=42)
-
-    x_train = x_train.values 
-    x_test = x_test.values
-    y_train = y_train.values
-    y_test = y_test.values
-    x_train = torch.from_numpy(x_train)
-    y_train = torch.from_numpy(y_train) 
-    x_test = torch.from_numpy(x_test) 
-    y_test = torch.from_numpy(y_test)
-
-    train_dataset = Data.TensorDataset(x_train, y_train) 
-    test_dataset = Data.TensorDataset(x_test, y_test)  
-    train_dataset = Data.DataLoader(train_dataset, batch_size=batch_size)
-    test_dataset = Data.DataLoader(test_dataset, batch_size=batch_size)
-
-    return train_dataset, test_dataset 
-## **训练模型**
-def train(model,train_dataset,test_dataset):
-
-    net = Net()
-    criterion = torch.nn.CrossEntropyLoss()
-    optm = torch.optim.Adam(net.parameters(),lr=0.001,betas=(0.9, 0.99))
-    epochs = 1500
-    train_loss = []
-    valid_loss = []
-    for j in range(epochs):
-        net.train()
-        for i, data in enumerate(train_dataset):
-            optm.zero_grad()
-            (inputs, labels) = data
-            inputs = inputs.to(device, dtype=torch.float)  # 100*20
-            labels = labels.to(device, dtype=torch.float)  # 100*1
-            inputs = torch.autograd.Variable(inputs)
-            labels = torch.autograd.Variable(labels)
-            outputs = net(inputs)
-            # outputs = outputs.reshape(-1)
-            loss = criterion(outputs, labels.long())
-            loss.backward()
-            optm.step()
-            train_loss.append(loss.item())
-        net.eval()
-        for i, test_data in enumerate(test_dataset):
-            (inputs, labels) = test_data
-            inputs = inputs.to(device, dtype=torch.float)  # 100*20
-            labels = labels.to(device, dtype=torch.float)  # 100*1
-            inputs = torch.autograd.Variable(inputs)
-            labels = torch.autograd.Variable(labels)
-            outputs = net(inputs)
-            # outputs = outputs.reshape(-1)
-            loss = criterion(outputs, labels.long())
-            valid_loss.append(loss.item())
-        print('epcoch %s  train loss: %.6f, valid loss:  %.6f' % (j, np.average(train_loss), np.average(valid_loss)))
-        train_loss = []
-        valid_loss = []
-        if j % 5 == 0:
-            test(net, test_dataset)
+##定义网络模型
+采用两层全连接网络，最后一层softmax输出层
+##获取数据
+拆分x_train,x_test,y_train,y_test数据
+转换数据形态
+##定义训练模型
+设置学习率参数0.001，迭代次数1500
+##定义测试
+找到测试结果中概率最大的下标，
